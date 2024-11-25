@@ -1,10 +1,12 @@
 /********************************** (C) COPYRIGHT ******************************
  * File Name         : CH58xBLE_LIB.H
  * Author            : WCH
- * Version           : V1.70
- * Date              : 2023/01/10
+ * Version           : V2.10
+ * Date              : 2024/03/18
  * Description       : head file
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
+ * Attention: This software (modified or not) and binary are used for
+ * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
 
@@ -155,6 +157,16 @@ typedef struct tag_ble_config
 } bleConfig_t; // Library initialization call BLE_LibInit function
 
 /* BLE pa control config struct */
+typedef struct tag_ble_clock_config
+{
+  pfnGetSysClock getClockValue;
+  uint32_t ClockMaxCount;         // The maximum count value
+  uint16_t ClockFrequency;        // The timing clock frequency(Hz)
+  uint16_t ClockAccuracy;         // The timing clock accuracy(ppm)
+  uint8_t  irqEnable;             // resv
+}bleClockConfig_t;
+
+/* BLE pa control config struct */
 typedef struct tag_ble_pa_control_config
 {
     uint32_t txEnableGPIO;        // tx enable gpio register
@@ -179,7 +191,7 @@ typedef struct
 /*********************************************************************
  * GLOBAL MACROS
  */
-#define VER_FILE  "CH58x_BLE_LIB_V1.7"
+#define VER_FILE  "CH58x_BLE_LIB_V2.1"
 extern const uint8_t VER_LIB[];  // LIB version
 #define SYSTEM_TIME_MICROSEN            625   // unit of process event timer is 625us
 #define MS1_TO_SYSTEM_TIME(x)  ((x)*1000/SYSTEM_TIME_MICROSEN)   // transform unit in ms to unit in 625us ( attentional bias )
@@ -221,7 +233,7 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define ABS(n)     (((n) < 0) ? -(n) : (n))
 #endif
 
-/* TxPower define(Accuracy:��2dBm) */
+/* Tx_POWER define(Accuracy:±2dBm) */
 #define LL_TX_POWEER_MINUS_16_DBM       0x01
 #define LL_TX_POWEER_MINUS_12_DBM       0x02
 #define LL_TX_POWEER_MINUS_8_DBM        0x04
@@ -339,6 +351,9 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define PERI_CONN_PARAM_UUID            0x2A04 // Peripheral Preferred Connection Parameters
 #define SERVICE_CHANGED_UUID            0x2A05 // Service Changed
 #define CENTRAL_ADDRESS_RESOLUTION_UUID 0x2AA6 // Central Address Resolution
+#define RL_PRIVATE_ADDR_ONLY_UUID       0x2AC9 // Resolvable Private Address Only
+#define ENC_DATA_KEY_MATERIAL_UUID      0x2B88 // Encrypted Data Key Material
+#define LE_GATT_SEC_LEVELS_UUID         0x2BF5 // LE GATT Security Levels
 
 /**
  * GATT Service UUIDs
@@ -460,6 +475,15 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define TERM_REASON_UUID                0x2BC0  // Termination Reason
 #define INCOMING_CALL_UUID              0x2BC1  // Incoming Call
 #define MUTE_UUID                       0x2BC3  // Mute
+#define ESL_ADDR_UUID                   0x2BF6  // ESL Address
+#define AP_SYNC_KEY_MATERIAL_UUID       0x2BF7  // AP Sync Key Material
+#define ESL_RSP_KEY_MATERIAL_UUID       0x2BF8  // ESL Response Key Material
+#define ESL_CURR_ABS_TIME_UUID          0x2BF9  // ESL Current Absolute Time
+#define ESL_DISPLAY_INFO_UUID           0x2BFA  // ESL Display Information
+#define ESL_IMAGE_INFO_UUID             0x2BFB  // ESL Image Information
+#define ESL_SENSOR_INFO_UUID            0x2BFC  // ESL Sensor Information
+#define ESL_LED_INFO_UUID               0x2BFD  // ESL LED Information
+#define ESL_CTL_POINT_UUID              0x2BFE  // ESL Control Point
 
 /**
  * GATT Unit UUIDs
@@ -615,6 +639,7 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define ATT_BT_UUID_SIZE                2
 // Size of 128-bit UUID
 #define ATT_UUID_SIZE                   16
+
 /******************************** GATT ***********************************/
 
 // GATT Attribute Access Permissions Bit Fields
@@ -735,7 +760,8 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define bleGAPBondRejected                      0x32  //!< The bond information was rejected.
 #define bleGAPExpiredCanceled                   0x33  //!< The duration has expired
 
-#define GAP_DEVICE_NAME_LEN                     21 // Excluding null-terminate char
+#define GAP_DEVICE_NAME_LEN                     21    //!< Excluding null-terminate char
+#define GAP_DEVICE_NAME_MAX_LEN                 248   //!< maximum length of device name
 
 // option defined
 #define LISTEN_PERIODIC_ADVERTISING_MODE        (1<<0) //!< used to determine whether the Periodic Advertiser List is used
@@ -758,16 +784,18 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define GAP_PRIVACY_ENABLED                     0x01
 
 // GAP GATT Server Parameters used with GGS Get/Set Parameter and Application's Callback functions
-#define GGS_DEVICE_NAME_ATT                     0   // RW  uint8_t[GAP_DEVICE_NAME_LEN]
-#define GGS_APPEARANCE_ATT                      1   // RW  uint16_t
-#define GGS_PERI_PRIVACY_FLAG_ATT               2   // RW  uint8_t
-#define GGS_RECONNCT_ADDR_ATT                   3   // RW  uint8_t[B_ADDR_LEN]
-#define GGS_PERI_CONN_PARAM_ATT                 4   // RW  sizeof(gapPeriConnectParams_t)
-#define GGS_PERI_PRIVACY_FLAG_PROPS             5   // RW  uint8_t
-#define GGS_W_PERMIT_DEVICE_NAME_ATT            6   // W   uint8_t
-#define GGS_W_PERMIT_APPEARANCE_ATT             7   // W   uint8_t
-#define GGS_W_PERMIT_PRIVACY_FLAG_ATT           8   // W   uint8_t
-#define GGS_CENT_ADDR_RES_ATT                   9   // RW  uint8_t
+#define GGS_DEVICE_NAME_ATT                     0   //!< RW  uint8_t[GAP_DEVICE_NAME_LEN]
+#define GGS_APPEARANCE_ATT                      1   //!< RW  uint16_t
+#define GGS_PERI_PRIVACY_FLAG_ATT               2   //!< RW  uint8_t
+#define GGS_RECONNCT_ADDR_ATT                   3   //!< RW  uint8_t[B_ADDR_LEN]
+#define GGS_PERI_CONN_PARAM_ATT                 4   //!< RW  sizeof(gapPeriConnectParams_t)
+#define GGS_PERI_PRIVACY_FLAG_PROPS             5   //!< RW  uint8_t
+#define GGS_W_PERMIT_DEVICE_NAME_ATT            6   //!< W   uint8_t
+#define GGS_W_PERMIT_APPEARANCE_ATT             7   //!< W   uint8_t
+#define GGS_W_PERMIT_PRIVACY_FLAG_ATT           8   //!< W   uint8_t
+#define GGS_CENT_ADDR_RES_ATT                   9   //!< RW  uint8_t
+#define GGS_ENC_DATA_KEY_MATERIAL               11  //!< RW  sizeof(gapEncDataKey_t)
+#define GGS_LE_GATT_SEC_LEVELS                  12  //!< RW  uint8_t
 // GAP Services bit fields
 #define GAP_SERVICE                             0x00000001
 
@@ -806,12 +834,13 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define TGAP_AUTH_TASK_ID                       24  //!< Task ID override for Task Authentication control (for stack internal use only)
 
 // v5.x
-#define TGAP_ADV_TX_POWER                       25  //!< Indicates the maximum power level Range: -127 �� N �� +126 Units: dBm.Default 127(Host has no preference).
+#define TGAP_ADV_TX_POWER                       25  //!< Indicates the maximum power level Range: -127 ≤ N ≤ +126 Units: dBm.Default 127(Host has no preference).
 #define TGAP_ADV_PRIMARY_PHY                    26  //!< Indicates the PHY on which the advertising packets are transmitted on the primary advertising channel.LE 1M/LE Coded.Default GAP_PHY_VAL_LE_1M.
 #define TGAP_ADV_SECONDARY_PHY                  27  //!< LE 1M/LE 2M/LE Coded. Default GAP_PHY_VAL_LE_1M.
 #define TGAP_ADV_SECONDARY_MAX_SKIP             28  //!< Maximum advertising events the Controller can skip before sending the AUX_ADV_IND packets on the secondary advertising channel. Default 0.
 #define TGAP_ADV_ADVERTISING_SID                29  //!< Value of the Advertising SID subfield in the ADI field of the PDU Range:0-15. Default 0.
-#define TGAP_ADV_SCAN_REQ_NOTIFY                30  //!< Scan request notifications enabled.Default 0-disabled.
+#define TGAP_ADV_SCAN_REQ_NOTIFY                30  //!< bit0:Scan request notifications enabled.Default 0-disabled.
+                                                    //!< bit1:After the SCAN_RSP PDU is sent the advertiser move to the next used primary advertising channel index.Default 0-close the advertising event.
 #define TGAP_ADV_ADVERTISING_DURATION           31  //!< Advertising duration Range: 0x0001 - 0xFFFF Time = N * 10ms. Default 0-No advertising duration.
 #define TGAP_ADV_MAX_EVENTS                     32  //!< indicates the maximum number of extended advertising events.Range: 0x00 - 0xFF. Default 0(No maximum number of advertising events).
 
@@ -851,7 +880,19 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define TGAP_SCAN_MAX_LENGTH                    58  //!< Extended scan maximum data length.Default 460
 #define TGAP_AFH_CHANNEL_MDOE                   59  //!< whether t he Controller's channel assessment scheme is enabled or disabled.Default disabled.
 
-#define TGAP_PARAMID_MAX                        60  //!< ID MAX-valid Parameter ID
+// Constant Tone Extension Transmit
+#define TGAP_CTE_TYPE                           60  //!< The type of Constant Tone Extension.Default GAP_CTE_TYPE_AOA.
+#define TGAP_CTE_LENGTH                         61  //!< The type of Constant Tone Extension.Default 20.Range[2,20]
+#define TGAP_CTE_COUNT                          62  //!< resv
+#define TGAP_LENGTH_OF_SWITCHING_PATTERN        63  //!< The number of Antenna IDs in the pattern,only used when transmitting an AoD Constant Tone Extension.Default 0.
+
+// Advertising Coding Selection
+#define TGAP_ADV_PRIMARY_PHY_OPTIONS            64  //!< Indicate the Host's preference or requirement concerning coding scheme.Default GAP_PHY_OPTIONS_NOPRE.
+#define TGAP_ADV_SECONDARY_PHY_OPTIONS          65  //!< indicate the Host's preference or requirement concerning coding scheme (including for periodic advertising).Default GAP_PHY_OPTIONS_NOPRE.
+
+#define TGAP_ADV_RSP_RSSI_MIN                   66  //!< The minimum RSSI for advertising to send scanning response. Default -127.
+
+#define TGAP_PARAMID_MAX                        67  //!< ID MAX-valid Parameter ID
 
 // GAP_DEVDISC_MODE_DEFINES GAP Device Discovery Modes
 #define DEVDISC_MODE_NONDISCOVERABLE            0x00  //!< No discoverable setting
@@ -895,12 +936,19 @@ extern const uint8_t VER_LIB[];  // LIB version
 
 // PHY_OPTIONS preferred coding when transmitting on the LE Coded PHY
 #define GAP_PHY_OPTIONS_TYPE
-#define GAP_PHY_OPTIONS_NOPRE                   0x00 // 0:no preferred
-#define GAP_PHY_OPTIONS_S2                      0x01
-#define GAP_PHY_OPTIONS_S8                      0x02
+#define GAP_PHY_OPTIONS_NOPRE                   0x00  //!< 0:no preferred
+#define GAP_PHY_OPTIONS_S2                      0x01  //!< prefers that S=2 coding be used when transmitting on the LE Coded PHY
+#define GAP_PHY_OPTIONS_S8                      0x02  //!< prefers that S=8 coding be used when transmitting on the LE Coded PHY
+#define GAP_PHY_OPTIONS_S2_REQUIRES             0x03  //!< requires that S=2 coding be used when transmitting on the LE Coded PHY
+#define GAP_PHY_OPTIONS_S8_REQUIRES             0x04  //!< requires that S=8 coding be used when transmitting on the LE Coded PHY
 
 // GAP_ADVERTISEMENT_TYPE_DEFINES GAP Periodic Advertising Properties
 #define GAP_PERI_PROPERTIES_INCLUDE_TXPOWER     (1<<6)
+
+// GAP_ADVERTISEMENT_TYPE_DEFINES GAP Connectionless CTE Transmit CTE type
+#define GAP_CTE_TYPE_AOA                        0x00  //!< AoA Constant Tone Extension
+#define GAP_CTE_TYPE_AOD_1US                    0x01  //!< AoD Constant Tone Extension with 1us slots
+#define GAP_CTE_TYPE_AOD_2US                    0x02  //!< AoD Constant Tone Extension with 2us slots
 
 // GAP Advertising Report Event Types
 #define GAP_ADVERTISEMENT_REPORT_TYPE_DEFINES
@@ -935,7 +983,7 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define GAP_FILTER_POLICY_WHITE_CON             0x02  //!< Allow Scan Request from Any, Connect from White List Only
 #define GAP_FILTER_POLICY_WHITE                 0x03  //!< Allow Scan Request and Connect from White List Only
 
-//! Maximum Pairing Passcode/Passkey value.  Range of a passkey can be 0 - 999,999.
+// Maximum Pairing Passcode/Passkey value.  Range of a passkey can be 0 - 999,999.
 #define GAP_PASSCODE_MAX                        999999
 
 /** Sign Counter Initialized - Sign counter hasn't been used yet.  Used when setting up
@@ -980,6 +1028,8 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define GAP_ADTYPE_SIMPLE_PAIRING_RANDR_256     0x1E //!< Simple Pairing Randomizer R-256
 #define GAP_ADTYPE_SERVICE_DATA_32BIT           0x20 //!< Service Data - 32-bit UUID
 #define GAP_ADTYPE_SERVICE_DATA_128BIT          0x21 //!< Service Data - 128-bit UUID
+#define GAP_ADTYPE_LE_SC_CONFIRMATION_VALUE     0x22 //!< LE Secure Connections Confirmation Value
+#define GAP_ADTYPE_LE_SC_RANDOM_VALUE           0x23 //!< LE Secure Connections Random Value
 #define GAP_ADTYPE_URI                          0x24 //!< URI
 #define GAP_ADTYPE_INDOOR_POSITION              0x25 //!< Indoor Positioning Service v1.0 or later
 #define GAP_ADTYPE_TRAN_DISCOVERY_DATA          0x26 //!< Transport Discovery Service v1.0 or later
@@ -992,6 +1042,10 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define GAP_ADTYPE_BROADCAST_CODE               0x2D //!< Broadcast_Code
 #define GAP_ADTYPE_RSL_SET_IDENT                0x2E //!< Resolvable Set Identifier.Coordinated Set Identification Profile 1.0
 #define GAP_ADTYPE_ADV_INTERVAL_LONG            0x2F //!< Advertising Interval - long
+#define GAP_ADTYPE_BROADCAST_NAME               0x30 //!< Public Broadcast Profile v1.0 or later
+#define GAP_ADTYPE_ENCRYPTED_ADV_DATA           0x31 //!< Core Specification Supplement, Part A, Section 1.23
+#define GAP_ADTYPE_PERI_ADV_RSP_TIMING_INFO     0x32 //!< Periodic Advertising Response Timing Information
+#define GAP_ADTYPE_ELECTRONIC_SHELF_LABEL       0x34 //!< ESL Profile
 #define GAP_ADTYPE_3D_INFO_DATA                 0x3D //!< 3D Information Data
 #define GAP_ADTYPE_MANUFACTURER_SPECIFIC        0xFF //!< Manufacturer Specific Data: first 2 octets contain the Company Identifier Code followed by the additional manufacturer specific data
 
@@ -1056,6 +1110,7 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define GAPROLE_PERIODIC_ADVERT_DATA            0x315  //!< Periodic advertisement Data. Read/Write. Max size is B_MAX_ADV_PERIODIC_LEN. Default to all 0.
 #define GAPROLE_PERIODIC_ADVERT_ENABLED         0x316  //!< bit0:Enable/Disable Periodic Advertising. Read/Write. Size is uint8_t. Default is FALSE=Disable.
                                                        //!< bit1:Include the ADI field in AUX_SYNC_IND PDUs
+#define GAPROLE_CTE_CONNECTIONLESS_ENABLED      0x317  //!< Enable/Disable Connectionless CTE Transmit. Read/Write. Size is uint8_t. Default is FALSE=Disable.
 
 /************************************GAPBOND***********************************/
 // GAPBOND_PROFILE_PARAMETERS GAP Bond Manager Parameters
@@ -1149,7 +1204,7 @@ extern const uint8_t VER_LIB[];  // LIB version
 #define BLE_NVID_CSRK                           0x03  //!< The Device's CSRK
 #define BLE_NVID_SIGNCOUNTER                    0x04  //!< The Device's Sign Counter
 
-//!< RF Mode BOND NV IDs
+// RF Mode BOND NV IDs
 #define BLE_NVID_BOND_RF_START                  0x10  //!< Start of the RF BOND NV IDs
 
 // Bonding NV Items - Range 0x20 - 0x6F
@@ -1184,26 +1239,27 @@ extern const uint8_t VER_LIB[];  // LIB version
 // Structure of NV data for the connected device's encryption information
 typedef struct
 {
-    uint8_t LTK[KEYLEN];              // Long Term Key (LTK)
-    uint16_t div;                     // LTK eDiv
-    uint8_t rand[B_RANDOM_NUM_SIZE];  // LTK random number
-    uint8_t keySize;                  // LTK key size
+    uint8_t LTK[KEYLEN];              //!< Long Term Key (LTK)
+    uint16_t div;                     //!< LTK eDiv
+    uint8_t rand[B_RANDOM_NUM_SIZE];  //!< LTK random number
+    uint8_t keySize;                  //!< LTK key size
 } gapBondLTK_t;
 
 // Structure of NV data for the connected device's address information
 typedef struct
 {
-    uint8_t publicAddr[B_ADDR_LEN];     // Master's address
-    uint8_t reconnectAddr[B_ADDR_LEN];  // Privacy Reconnection Address
-    uint16_t stateFlags; // State flags: SM_AUTH_STATE_AUTHENTICATED & SM_AUTH_STATE_BONDING
+    uint8_t publicAddr[B_ADDR_LEN];     //!< Central's address
+    uint8_t reconnectAddr[B_ADDR_LEN];  //!< Privacy Reconnection Address
+    uint16_t stateFlags; //!< State flags: SM_AUTH_STATE_AUTHENTICATED & SM_AUTH_STATE_BONDING
     uint8_t bondsToDelete;
+    uint8_t publicAddrType;  //!< Central's address type
 } gapBondRec_t;
 
 // Structure of NV data for the connected device's characteristic configuration
 typedef struct
 {
-    uint16_t attrHandle;  // attribute handle
-    uint8_t value;        // attribute value for this device
+    uint16_t attrHandle;  //!< attribute handle
+    uint8_t value;        //!< attribute value for this device
 } gapBondCharCfg_t;
 
 /*********************************************************************
@@ -1211,41 +1267,41 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t srk[KEYLEN];   // Signature Resolving Key
-    uint32_t signCounter;  // Sign Counter
+    uint8_t srk[KEYLEN];   //!< Signature Resolving Key
+    uint32_t signCounter;  //!< Sign Counter
 } linkSec_t;
 
 typedef struct
 {
-    uint8_t ltk[KEYLEN];             // Long Term Key
-    uint16_t div;                    // Diversifier
-    uint8_t rand[B_RANDOM_NUM_SIZE]; // random number
-    uint8_t keySize;                 // LTK Key Size
+    uint8_t ltk[KEYLEN];             //!< Long Term Key
+    uint16_t div;                    //!< Diversifier
+    uint8_t rand[B_RANDOM_NUM_SIZE]; //!< random number
+    uint8_t keySize;                 //!< LTK Key Size
     uint8_t gapBondInvalid;
 } encParams_t;
 
 typedef struct
 {
-    uint8_t connRole;          // GAP Profile Roles @GAP_PROFILE_ROLE_DEFINES
-    uint8_t addrType;          // Address type of connected device
-    uint8_t addr[B_ADDR_LEN];  // Other Device's address
+    uint8_t connRole;          //!< GAP Profile Roles @GAP_PROFILE_ROLE_DEFINES
+    uint8_t addrType;          //!< Address type of connected device
+    uint8_t addr[B_ADDR_LEN];  //!< Other Device's address
     encParams_t encParams;
 } bondEncParams_t;
 
 typedef struct
 {
-    uint8_t taskID;            // Application that controls the link
-    uint16_t connectionHandle; // Controller connection handle
-    uint8_t stateFlags;        // LINK_CONNECTED, LINK_AUTHENTICATED...
-    uint8_t addrType;          // Address type of connected device
-    uint8_t addr[B_ADDR_LEN];  // Other Device's address
-    uint8_t connRole;          // Connection formed as central or peripheral
-    uint16_t connInterval;     // The connection's interval (n * 1.25ms)
+    uint8_t taskID;            //!< Application that controls the link
+    uint16_t connectionHandle; //!< Controller connection handle
+    uint8_t stateFlags;        //!< LINK_CONNECTED, LINK_AUTHENTICATED...
+    uint8_t addrType;          //!< Address type of connected device
+    uint8_t addr[B_ADDR_LEN];  //!< Other Device's address
+    uint8_t connRole;          //!< Connection formed as central or peripheral
+    uint16_t connInterval;     //!< The connection's interval (n * 1.25ms)
     uint16_t connLatency;
     uint16_t connTimeout;
-    uint16_t MTU;              // The connection's MTU size
-    linkSec_t sec;             // Connection Security related items
-    encParams_t *pEncParams;   // pointer to LTK, ediv, rand. if needed.
+    uint16_t MTU;              //!< The connection's MTU size
+    linkSec_t sec;             //!< Connection Security related items
+    encParams_t *pEncParams;   //!< pointer to LTK, ediv, rand. if needed.
     uint16_t smEvtID;
     void *pPairingParams;
     void *pAuthLink;
@@ -1326,7 +1382,7 @@ typedef struct
 {
     uint16_t startHandle;   //!< First requested handle number (must be first field)
     uint16_t endHandle;     //!< Last requested handle number
-    attAttrBtType_t type;  //!< 2-octet UUID to find
+    attAttrBtType_t type;   //!< 2-octet UUID to find
     uint16_t len;           //!< Length of value
     uint8_t *pValue;        //!< Attribute value to find (0 to ATT_MTU_SIZE-7)
 } attFindByTypeValueReq_t;
@@ -1809,6 +1865,12 @@ typedef struct
   uint16_t timeout;                   //!< Connection Timeout (0x000A - 0x0C80 * 10ms)
 } gapPeriConnectParams_t;
 
+typedef struct
+{
+  uint8_t sessionKey[16];             //!< The shared session key.
+  uint8_t IV[8];                      //!< The initialization vector.
+} gapEncDataKey_t;
+
 /**
  * GAP event header format.
  */
@@ -2040,6 +2102,26 @@ typedef struct
 } gapScanReqReseiveEvent_t;
 
 /**
+ * GAP_CONNECTIONESS_CTE_DONE_EVENT message format.  This message is sent to the
+ * app when the Connectionless CTE Transmit config is complete.
+ */
+typedef struct
+{
+    tmos_event_hdr_t hdr; //!< GAP_MSG_EVENT and status
+    uint8_t opcode;          //!< GAP_CONNECTIONESS_CTE_DONE_EVENT
+} gapMakeConnectionlessCTERspEvent_t;
+
+/**
+ * GAP_END_PERIODIC_ADV_DONE_EVENT message format.  This message is sent to the
+ * app when the Periodic Advertising disable is complete.
+ */
+typedef struct
+{
+    tmos_event_hdr_t hdr; //!< GAP_MSG_EVENT and status
+    uint8_t opcode;          //!< GAP_END_CONNECTIONESS_CTE_DONE_EVENT
+} gapEndConnectionlessCTERspEvent_t;
+
+/**
  * GAP_ADV_DATA_UPDATE_DONE_EVENT message format.  This message is sent to the
  * app when Advertising Data Update is complete.
  */
@@ -2064,7 +2146,7 @@ typedef struct
     uint8_t devAddrType;         //!< Device address type: @ref GAP_ADDR_TYPE_DEFINES
     uint8_t devAddr[B_ADDR_LEN]; //!< Device address of link
     uint16_t connectionHandle;   //!< Connection Handle from controller used to ref the device
-    uint8_t connRole;            //!< Connection formed as Master or Slave
+    uint8_t connRole;            //!< Connection formed as Central or Peripheral
     uint16_t connInterval;       //!< Connection Interval
     uint16_t connLatency;        //!< Connection Latency
     uint16_t connTimeout;        //!< Connection Timeout
@@ -2228,10 +2310,19 @@ typedef unsigned long gapRole_States_t;
 #define GAPROLE_PERIODIC_WAIT               (2<<4)  //!< Periodic advertising is started but disable
 #define GAPROLE_PERIODIC_ERROR              (3<<4)  //!< Periodic advertising error occurred
 
-// gapRole_States_t @ 16b'[23-8]- Reserved for future use
+// gapRole_States_t @ 4b'[11-8]-Connectionless CTE Transmit states
+// Connectionless CTE Transmit Enable,only effective when Periodic advertising valid
+#define GAPROLE_STATE_CTE_MASK              (0xF00) //!< gapRole_States_t Connectionless CTE defined
+#define GAPROLE_STATE_CTE_SHIFT             (8)     //!< Connectionless CTE Transmit states shift
+#define GAPROLE_CONNECTIONLESS_CTE_INVALID  (0<<8)  //!< Connectionless CTE Transmit Waiting to be started
+#define GAPROLE_CONNECTIONLESS_CTE_ENABLE   (1<<8)  //!< Connectionless CTE Transmit Enable
+#define GAPROLE_CONNECTIONLESS_CTE_WAIT     (2<<8)  //!< Connectionless CTE Transmit is started but disable
+#define GAPROLE_CONNECTIONLESS_CTE_ERROR    (3<<8)  //!< Connectionless CTE Transmit error occurred
+// gapRole_States_t @ 12b'[23-12]- Reserved for future use
 
 // gapRole_States_t @ 8b'[31-24] - indicates which fields change
 #define GAPROLE_PERIODIC_STATE_VALID        (1<<24) //!< indicates periodic advertising states change
+#define GAPROLE_CTE_T_STATE_VALID           (1<<25) //!< indicates Connectionless CTE Transmit states change
 
 /**
  * gapRole Event Structure
@@ -2647,7 +2738,7 @@ extern bStatus_t tmos_snv_read( tmosSnvId_t id, tmosSnvLen_t len, void *pBuf );
  *
  * @return  SUCCESS if successful, FAILURE if failed.
  */
-extern bStatus_t TMOS_TimerInit( pfnGetSysClock fnGetClock );
+extern bStatus_t TMOS_TimerInit( bleClockConfig_t *pClockConfig );
 
 /**
  * @brief   interrupt handler.
@@ -2656,7 +2747,7 @@ extern bStatus_t TMOS_TimerInit( pfnGetSysClock fnGetClock );
  *
  * @return  None
  */
-extern void TMOS_TimerIRQHandler( void );
+extern bStatus_t TMOS_TimerIRQHandler( uint32_t *time );
 
 /**
  * @brief   Process system
@@ -3898,9 +3989,6 @@ extern bStatus_t GAP_SetParamValue( uint16_t paramID, uint16_t paramValue );
 /**
  * @brief   Get a GAP Parameter value.
  *
- * @note    This function is the same as GAP_PasskeyUpdate(), except that
- *          the passkey is passed in as a non-string format.
- *
  * @param   paramID - parameter ID: @ref GAP_PARAMETER_ID_DEFINES
  *
  * @return  GAP Parameter value or 0xFFFF if invalid
@@ -4418,7 +4506,7 @@ extern bStatus_t RF_Config( rfConfig_t *pConfig );
  *                      broadcast type(0xFF):received by all matching types;
  *                      others:only received by matching type
  *
- * @return  0 - success.
+ * @return  0 - success. 1-access address error 2-busy
  */
 extern bStatus_t RF_Rx( uint8_t *txBuf, uint8_t txLen, uint8_t pktRxType, uint8_t pktTxType );
 
@@ -4434,7 +4522,7 @@ extern bStatus_t RF_Rx( uint8_t *txBuf, uint8_t txLen, uint8_t pktRxType, uint8_
  *                      broadcast type(0xFF):receive all matching types,
  *                      others:receive match type or broadcast type
  *
- * @return  0 - success.
+ * @return  0 - success. 1-access address error 2-busy
  */
 extern bStatus_t RF_Tx( uint8_t *txBuf, uint8_t txLen, uint8_t pktTxType, uint8_t pktRxType );
 
@@ -4455,6 +4543,17 @@ extern bStatus_t RF_Shut( void );
  * @return  0 - success.
  */
 extern void RF_SetChannel( uint32_t channel );
+
+/**
+ * @brief   rf mode set radio frequency and whitening channel index
+ *  note: LLEMode bit6 set 1
+ *
+ * @param   frequency -
+ * @param   ch - the whitening channel index
+ *
+ * @return  0 - success.
+ */
+extern bStatus_t RF_SetFrequency( uint32_t frequency, uint8_t ch );
 
 /**
  * @brief   shut down rf frequency hopping

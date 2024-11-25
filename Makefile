@@ -24,32 +24,32 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES = \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_clk.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer0.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_i2c.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_flash.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer2.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usbhostBase.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_pwr.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_pwm.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart3.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_spi0.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart2.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usbhostClass.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart0.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer3.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_adc.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usb2hostClass.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usbdev.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_gpio.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_sys.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart1.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer1.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usb2dev.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_spi1.c \
-CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usb2hostBase.c \
-CH5xx_ble_firmware_library/RVMSIS/core_riscv.c \
 User/Main.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer1.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_adc.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_flash.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usb2hostBase.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart2.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_spi1.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usbhostBase.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer3.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usbhostClass.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer2.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart1.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_clk.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_gpio.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usb2hostClass.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_pwr.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_timer0.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_pwm.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart0.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_spi0.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_i2c.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usbdev.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_usb2dev.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_uart3.c \
+CH5xx_ble_firmware_library/StdPeriphDriver/CH58x_sys.c \
+CH5xx_ble_firmware_library/RVMSIS/core_riscv.c \
 
 
 # ASM sources
@@ -59,7 +59,7 @@ CH5xx_ble_firmware_library/Startup/startup_CH583.S
 #######################################
 # binaries
 #######################################
-PREFIX = riscv-none-embed-
+PREFIX = riscv-none-elf-
 
 CC = $(PREFIX)gcc
 AS = $(PREFIX)gcc -x assembler-with-cpp
@@ -73,7 +73,10 @@ BIN = $(CP) -O binary -S
 # CFLAGS
 #######################################
 # cpu
-CPU = -march=rv32imac -mabi=ilp32 -msmall-data-limit=8 
+CPU = -march=rv32imac_zicsr -mabi=ilp32 -msmall-data-limit=8 
+
+# For gcc version less than v12
+# CPU = -march=rv32imac -mabi=ilp32 -msmall-data-limit=8
 
 # fpu
 FPU = 
@@ -157,7 +160,7 @@ $(BUILD_DIR):
 # Program
 #######################################
 program: $(BUILD_DIR)/$(TARGET).elf
-	sudo wch-openocd -f /usr/share/wch-openocd/openocd/scripts/interface/wch-riscv.cfg -c 'init; halt; program $(BUILD_DIR)/$(TARGET).elf; reset; wlink_reset_resume; exit;'
+	sudo wch-openocd -f ./wch-riscv.cfg -c 'init; halt; program $(BUILD_DIR)/$(TARGET).elf; reset; wlink_reset_resume; exit;'
 
 isp: $(BUILD_DIR)/$(TARGET).bin
 	wchisp flash $(BUILD_DIR)/$(TARGET).bin

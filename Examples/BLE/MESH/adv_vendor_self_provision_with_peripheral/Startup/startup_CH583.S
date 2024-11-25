@@ -21,7 +21,7 @@ _vector_base:
     .word   0
     .word   NMI_Handler                 /* NMI Handler */
     .word   HardFault_Handler           /* Hard Fault Handler */
-    .word   0xF5F9BDA9
+    .word   0xF3F9BDA9
     .word   Ecall_M_Mode_Handler        /* 5 */
     .word   0
     .word   0
@@ -168,7 +168,7 @@ handle_reset:
 	csrw 0x804, t0
 	
     li t0, 0x1888
-    csrs mstatus, t0
+    csrw mstatus, t0
 	la t0, _vector_base
 
 	/* 配置向量表模式为绝对地址模式 */

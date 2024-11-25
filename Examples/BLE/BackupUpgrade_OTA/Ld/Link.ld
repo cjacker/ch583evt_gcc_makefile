@@ -1,5 +1,9 @@
 ENTRY( _start )
 
+__stack_size = 512;
+
+PROVIDE( _stack_size = __stack_size );
+
 MEMORY
 {
 	FLASH (rx) : ORIGIN = 0x00001000, LENGTH = 216K
@@ -120,11 +124,6 @@ SECTIONS
 	  KEEP (*(.dtors))
 	} >FLASH AT>FLASH 
 
-	.dalign    : 
-	{
-		. = ORIGIN(RAM) + MAX(0x800 , SIZEOF(.highcode));
-	} >RAM AT>FLASH	
-
 	.dlalign :
 	{
 		. = ALIGN(4); 
@@ -168,11 +167,14 @@ SECTIONS
 	PROVIDE( _end = _ebss);
 	PROVIDE( end = . );
 	
-	.stack ORIGIN(RAM)+LENGTH(RAM) :
-	{
-		. = ALIGN(4);
-		PROVIDE(_eusrstack = . );
-	} >RAM  
+    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size :
+    {
+        PROVIDE( _heap_end = . );   
+        . = ALIGN(4);
+        PROVIDE(_susrstack = . );
+        . = . + __stack_size;
+        PROVIDE( _eusrstack = .);
+    } >RAM 
 }
 
 
